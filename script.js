@@ -1,30 +1,38 @@
-let dragged = null;
+const draggables = document.querySelectorAll(".image");
+const container = document.getElementById("parent");
 
-document.querySelectorAll('.image').forEach(div => {
-  div.addEventListener('dragstart', e => {
-    dragged = e.target.closest('.image');
+draggables.forEach(draggable => {
+  draggable.addEventListener("dragstart", () => {
+    draggable.classList.add("dragging");
   });
 
-  div.addEventListener('dragover', e => {
-    e.preventDefault(); // Required to allow drop
-  });
-
-  div.addEventListener('drop', e => {
-    e.preventDefault();
-    const dropTarget = e.target.closest('.image');
-    if (dragged && dropTarget && dragged !== dropTarget) {
-      const draggedImg = dragged.querySelector('img');
-      const dropImg = dropTarget.querySelector('img');
-
-      // Swap image sources
-      const tempSrc = draggedImg.src;
-      draggedImg.src = dropImg.src;
-      dropImg.src = tempSrc;
-
-      // Optional: swap alt text
-      const tempAlt = draggedImg.alt;
-      draggedImg.alt = dropImg.alt;
-      dropImg.alt = tempAlt;
-    }
+  draggable.addEventListener("dragend", () => {
+    draggable.classList.remove("dragging");
   });
 });
+
+container.addEventListener("dragover", e => {
+  e.preventDefault();
+  const afterElement = getDragAfterElement(container, e.clientX);
+  const dragging = document.querySelector(".dragging");
+  if (afterElement == null) {
+    container.appendChild(dragging);
+  } else {
+    container.insertBefore(dragging, afterElement);
+  }
+});
+
+function getDragAfterElement(container, x) {
+  const draggableElements = [...container.querySelectorAll(".image:not(.dragging)")];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
